@@ -470,6 +470,8 @@ const SOCIAL_LINKS = {
   instagram: '#',
 };
 
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mzepgzpo';
+
 /* ---------------------------------------------------------------
    DATA
 --------------------------------------------------------------- */
@@ -1326,11 +1328,28 @@ function Mission() {
 function ContactForm() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSent(true);
+    setSubmitting(true);
+    setError('');
+
+    const response = await fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      body: new FormData(e.currentTarget),
+    });
+
+    if (response.ok) {
+      setSent(true);
+    } else {
+      setError('Message could not be sent right now. Please try again.');
+    }
+
+    setSubmitting(false);
   };
 
   const inputStyle = {
@@ -1358,6 +1377,7 @@ function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <input type="hidden" name="_subject" value="New CineSynapse Studio message" />
       <input name="name" placeholder="Name" value={form.name} onChange={handleChange} style={inputStyle} required />
       <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleChange} style={inputStyle} required />
       <input
@@ -1380,10 +1400,21 @@ function ContactForm() {
       <button
         type="submit"
         className="sm:col-span-2 justify-self-start px-8 py-4 text-sm"
-        style={{ ...sans, backgroundColor: '#c9974a', color: '#0a0908' }}
+        style={{
+          ...sans,
+          backgroundColor: submitting ? 'rgba(201,151,74,0.6)' : '#c9974a',
+          color: '#0a0908',
+          cursor: submitting ? 'wait' : 'pointer',
+        }}
+        disabled={submitting}
       >
-        Send Message
+        {submitting ? 'Sending...' : 'Send Message'}
       </button>
+      {error && (
+        <p className="sm:col-span-2 text-sm" style={{ ...sans, color: '#d48c6a' }}>
+          {error}
+        </p>
+      )}
     </form>
   );
 }
